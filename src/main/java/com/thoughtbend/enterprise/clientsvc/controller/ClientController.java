@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.thoughtbend.enterprise.clientsvc.entity.ClientDocument;
+import com.thoughtbend.enterprise.clientsvc.event.ClientEventPublisher;
+import com.thoughtbend.enterprise.clientsvc.event.OutboundNewClientEvent;
 import com.thoughtbend.enterprise.clientsvc.repository.ClientRepository;
 import com.thoughtbend.enterprise.clientsvc.resource.ClientResource;
 import com.thoughtbend.enterprise.clientsvc.util.Const;
@@ -38,6 +40,9 @@ public class ClientController {
 
 	@Autowired
 	private ClientRepository clientRepository;
+	
+	@Autowired
+	private ClientEventPublisher clientEventPublisher;
 
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(code = HttpStatus.OK)
@@ -48,7 +53,11 @@ public class ClientController {
 			LOG.trace("ClientResource::getClients() called");
 		}
 
-		var result = this.clientRepository.findAll().stream().map(this::transform).collect(Collectors.toList());
+		// @formatter:off
+		var result = this.clientRepository.findAll().stream()
+							.map(this::transform)
+							.collect(Collectors.toList());
+		// @formatter:on
 
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("ClientResource::getClients() returned %1$s results", result.size()));
@@ -68,6 +77,9 @@ public class ClientController {
 
 		final ClientDocument dataDoc = this.transform(clientResource);
 		this.clientRepository.save(dataDoc);
+		
+		final OutboundNewClientEvent event = new OutboundNewClientEvent("NEW_CLIENT", clientResource);
+		this.clientEventPublisher.publish(event);
 
 		return ResponseEntity.created(new URI(Const.ApiPath.VERSION + "/client/" + id)).body(clientResource);
 	}
@@ -84,7 +96,7 @@ public class ClientController {
 
 		return result;
 	}
-	
+
 	private ClientResource transform(ClientDocument source) {
 
 		final ClientResource target = new ClientResource();

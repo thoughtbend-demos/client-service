@@ -5,6 +5,8 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,6 +38,8 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtbend.enterprise.clientsvc.entity.ClientDocument;
+import com.thoughtbend.enterprise.clientsvc.event.ClientEventPublisher;
+import com.thoughtbend.enterprise.clientsvc.event.OutboundNewClientEvent;
 import com.thoughtbend.enterprise.clientsvc.repository.ClientRepository;
 
 @WebMvcTest(controllers = ClientController.class)
@@ -69,6 +73,9 @@ public class ClientControllerTest {
 
 	@MockBean(name = "clientRepository")
 	private ClientRepository mockClientRepo;
+	
+	@MockBean(name = "clientEventPublisher")
+	private ClientEventPublisher mockClientEventPublisher;
 
 	@BeforeEach
 	public void beforeTest() throws Exception {
@@ -154,6 +161,12 @@ public class ClientControllerTest {
 		final ClientDocument capturedClient = clientCaptor.getValue();
 		assertNotNull(capturedClient, "capturedClient should not be null");
 		assertNotNull(capturedClient.getDocId(), "capturedClient docId should not be null");
+		
+		final ArgumentCaptor<OutboundNewClientEvent> eventCaptor = ArgumentCaptor.forClass(OutboundNewClientEvent.class);
+		verify(this.mockClientEventPublisher).publish(eventCaptor.capture());
+		
+		final OutboundNewClientEvent capturedEvent = eventCaptor.getValue();
+		assertNotNull(capturedEvent, "capturedEvent should not be null");
 
 		// @formatter:off
 		result.andExpect(status().isCreated())
@@ -174,6 +187,8 @@ public class ClientControllerTest {
 				post(CLIENT_ROOT_PATH).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
 
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
 		result.andExpect(status().isBadRequest()).andExpect(header().string("Location", is(nullValue())));
 	}
 
@@ -186,6 +201,8 @@ public class ClientControllerTest {
 		final ResultActions result = mvc.perform(post(CLIENT_ROOT_PATH).header("Authorization", "Bearer " + TOKEN)
 				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON));
 
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
 		result.andExpect(status().isBadRequest()).andExpect(header().string("Location", is(nullValue())));
 	}
 	
