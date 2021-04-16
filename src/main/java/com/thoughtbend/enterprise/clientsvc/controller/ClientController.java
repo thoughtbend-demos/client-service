@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -27,7 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.thoughtbend.enterprise.clientsvc.entity.ClientDocument;
 import com.thoughtbend.enterprise.clientsvc.event.ClientEventPublisher;
-import com.thoughtbend.enterprise.clientsvc.event.OutboundNewClientEvent;
+import com.thoughtbend.enterprise.clientsvc.event.OutboundClientDataEvent;
+import com.thoughtbend.enterprise.clientsvc.event.OutboundClientDataEventType;
 import com.thoughtbend.enterprise.clientsvc.repository.ClientRepository;
 import com.thoughtbend.enterprise.clientsvc.resource.ClientResource;
 import com.thoughtbend.enterprise.clientsvc.util.Const;
@@ -72,6 +74,10 @@ public class ClientController {
 	@PreAuthorize("hasAuthority('SCOPE_create:client')")
 	public ResponseEntity<ClientResource> createClient(@RequestBody @Valid ClientResource clientResource)
 			throws Exception {
+		
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("ClientResource::createClient() called");
+		}
 
 		final String id = UUID.randomUUID().toString();
 		clientResource.setId(id);
@@ -79,7 +85,7 @@ public class ClientController {
 		final ClientDocument dataDoc = this.transform(clientResource);
 		this.clientRepository.save(dataDoc);
 		
-		final OutboundNewClientEvent event = new OutboundNewClientEvent("NEW_CLIENT", clientResource);
+		final OutboundClientDataEvent event = OutboundClientDataEventType.NEW.createEvent(clientResource);
 		this.clientEventPublisher.publish(event);
 
 		return ResponseEntity.created(new URI(Const.ApiPath.VERSION + "/client/" + id)).body(clientResource);
@@ -90,6 +96,10 @@ public class ClientController {
 	@PreAuthorize("hasAuthority('SCOPE_read:client')")
 	public ClientResource getClientById(@PathVariable(name = "clientId") final String clientId) {
 
+		if (LOG.isTraceEnabled()) {
+			LOG.trace(String.format("ClientResource::getClient() called [%1$s]", clientId));
+		}
+		
 		final Optional<ClientDocument> optionalClientDocument = this.clientRepository.findByDocId(clientId);
 
 		final ClientDocument clientDocument = optionalClientDocument.orElseThrow(NotFoundException::new);
@@ -98,9 +108,36 @@ public class ClientController {
 		return result;
 	}
 	
+	@PutMapping(path = "/{clientId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseStatus(code = HttpStatus.NO_CONTENT)
+	@PreAuthorize("hasAuthority('SCOPE_update:client')")
+	public void updateClientbyId(@PathVariable(name = "clientId") final String clientId,
+			@RequestBody @Valid final ClientResource clientResource) {
+
+		if (LOG.isTraceEnabled()) {
+			LOG.trace(String.format("ClientResource::updateClientbyId() called [%1$s]", clientId));
+		}
+		
+		if (clientId.equals(clientResource.getId()) == false) {
+			LOG.info(String.format("Incoming clientId did not match between path and document body [path=%1$s, body=%2$s]", clientId, clientResource.getId()));
+			throw new BadRequestException();
+		}
+
+		final ClientDocument clientDocument = this.clientRepository.findByDocId(clientId)
+				.orElseThrow(NotFoundException::new);
+		
+		final ClientDocument mergedClientDocument = this.merge(clientDocument, clientResource);
+		this.clientRepository.save(mergedClientDocument);
+	}
+	
 	@DeleteMapping(path = "/{clientId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(code = HttpStatus.NO_CONTENT)
+	@PreAuthorize("hasAuthority('SCOPE_delete:client')")
 	public void deleteClientById(@PathVariable(name = "clientId") final String clientId) {
+		
+		if (LOG.isTraceEnabled()) {
+			LOG.trace(String.format("ClientResource::deleteClientbyId() called [%1$s]", clientId));
+		}
 		
 		if (!this.clientRepository.existsByDocId(clientId)) {
 			throw new NotFoundException();
@@ -130,6 +167,15 @@ public class ClientController {
 		target.setContactNumber(source.getContactNumber());
 		target.setClientExecutiveId(source.getClientExecutiveId());
 
+		return target;
+	}
+	
+	private ClientDocument merge(ClientDocument target, ClientResource source) {
+		
+		target.setName(source.getName());
+		target.setClientExecutiveId(source.getClientExecutiveId());
+		target.setContactNumber(source.getContactNumber());
+		
 		return target;
 	}
 }

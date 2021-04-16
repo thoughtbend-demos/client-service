@@ -2,12 +2,12 @@ package com.thoughtbend.enterprise.clientsvc.event;
 
 import com.thoughtbend.enterprise.clientsvc.resource.ClientResource;
 
-public class OutboundNewClientEvent {
+public class OutboundClientDataEvent {
 
 	private final String eventName;
 	private final ClientResource clientData;
 	
-	public OutboundNewClientEvent(final String eventName, final ClientResource clientData) {
+	OutboundClientDataEvent(final String eventName, final ClientResource clientData) {
 		this.eventName = eventName;
 		this.clientData = clientData;
 	}
