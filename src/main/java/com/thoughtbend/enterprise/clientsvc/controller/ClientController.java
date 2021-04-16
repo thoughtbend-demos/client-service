@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -96,6 +97,17 @@ public class ClientController {
 
 		return result;
 	}
+	
+	@DeleteMapping(path = "/{clientId}", produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseStatus(code = HttpStatus.NO_CONTENT)
+	public void deleteClientById(@PathVariable(name = "clientId") final String clientId) {
+		
+		if (!this.clientRepository.existsByDocId(clientId)) {
+			throw new NotFoundException();
+		}
+		
+		this.clientRepository.deleteByDocId(clientId);
+	}
 
 	private ClientResource transform(ClientDocument source) {
 
@@ -103,6 +115,7 @@ public class ClientController {
 
 		target.setId(source.getDocId());
 		target.setName(source.getName());
+		target.setContactNumber(source.getContactNumber());
 		target.setClientExecutiveId(source.getClientExecutiveId());
 
 		return target;
@@ -114,6 +127,7 @@ public class ClientController {
 
 		target.setDocId(source.getId());
 		target.setName(source.getName());
+		target.setContactNumber(source.getContactNumber());
 		target.setClientExecutiveId(source.getClientExecutiveId());
 
 		return target;

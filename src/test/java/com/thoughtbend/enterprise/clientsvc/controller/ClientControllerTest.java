@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -49,6 +51,7 @@ public class ClientControllerTest {
 	}
 	
 	static class TestData {
+		final static String ID = UUID.randomUUID().toString();
 		final static String DOC_ID = UUID.randomUUID().toString();
 		final static String NAME = "Test Client Name";
 		final static String PHONE_VALID = "3125551212";
@@ -179,7 +182,8 @@ public class ClientControllerTest {
 			.andExpect(header().string("Location", is(CLIENT_ROOT_PATH + "/" + capturedClient.getDocId())))
 			.andExpect(jsonPath("$.id", is(capturedClient.getDocId())))
 			.andExpect(jsonPath("$.name", is(TestData.NAME)))
-			.andExpect(jsonPath("$.clientExecutiveId", is(TestData.CLIENT_EXEC_ID)));
+			.andExpect(jsonPath("$.clientExecutiveId", is(TestData.CLIENT_EXEC_ID)))
+			.andExpect(jsonPath("$.contactNumber", is(TestData.PHONE_VALID)));
 		// @formatter:on
 	}
 	
@@ -258,6 +262,7 @@ public class ClientControllerTest {
 		dataFixture.setDocId(TestData.DOC_ID);
 		dataFixture.setName(TestData.NAME);
 		dataFixture.setClientExecutiveId(TestData.CLIENT_EXEC_ID);
+		dataFixture.setContactNumber(TestData.PHONE_VALID);
 		
 		when(this.mockClientRepo.findByDocId(TestData.DOC_ID)).thenReturn(Optional.of(dataFixture));
 		
@@ -269,7 +274,8 @@ public class ClientControllerTest {
 		result.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id", is(TestData.DOC_ID)))
 			.andExpect(jsonPath("$.name", is(TestData.NAME)))
-			.andExpect(jsonPath("$.clientExecutiveId", is(TestData.CLIENT_EXEC_ID)));
+			.andExpect(jsonPath("$.clientExecutiveId", is(TestData.CLIENT_EXEC_ID)))
+			.andExpect(jsonPath("$.contactNumber", is(TestData.PHONE_VALID)));
 	}
 	
 	@Test
@@ -281,6 +287,40 @@ public class ClientControllerTest {
 				get(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON));
 		
 		verify(this.mockClientRepo, times(1)).findByDocId(TestData.DOC_ID);
+		
+		result.andExpect(status().isNotFound());
+	}
+	
+	@Test
+	public void test_deleteClientById_success() throws Exception {
+		
+		// 1. Setup
+		when(this.mockClientRepo.existsByDocId(TestData.DOC_ID)).thenReturn(true);
+		
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				delete(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN));
+		
+		// 3. Validate
+		verify(this.mockClientRepo).existsByDocId(TestData.DOC_ID);
+		verify(this.mockClientRepo).deleteByDocId(TestData.DOC_ID);
+		
+		result.andExpect(status().isNoContent());
+	}
+	
+	@Test
+	public void test_deleteClientById_errorDocIdNotFound() throws Exception {
+		
+		// 1. Setup
+		when(this.mockClientRepo.existsByDocId(TestData.DOC_ID)).thenReturn(false);
+		
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				delete(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN));
+		
+		// 3. Validate
+		verify(this.mockClientRepo).existsByDocId(TestData.DOC_ID);
+		verifyNoMoreInteractions(this.mockClientRepo);
 		
 		result.andExpect(status().isNotFound());
 	}

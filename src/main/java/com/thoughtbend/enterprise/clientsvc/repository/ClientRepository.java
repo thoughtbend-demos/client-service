@@ -9,4 +9,6 @@ import com.thoughtbend.enterprise.clientsvc.entity.ClientDocument;
 public interface ClientRepository extends MongoRepository<ClientDocument, String> {
 
 	Optional<ClientDocument> findByDocId(String docId);
+	boolean existsByDocId(String docId);
+	void deleteByDocId(String docId);
 }

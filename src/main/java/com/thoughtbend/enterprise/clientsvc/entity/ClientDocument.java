@@ -16,6 +16,8 @@ public class ClientDocument {
 	@Indexed(unique = true)
 	private String name;
 	
+	private String contactNumber;
+	
 	private String clientExecutiveId;
 
 	public String getDbId() {
@@ -48,5 +50,13 @@ public class ClientDocument {
 
 	public void setDocId(String docId) {
 		this.docId = docId;
+	}
+
+	public String getContactNumber() {
+		return contactNumber;
+	}
+
+	public void setContactNumber(String contactNumber) {
+		this.contactNumber = contactNumber;
 	}
 }
