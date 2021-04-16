@@ -1,12 +1,10 @@
 package com.thoughtbend.enterprise.clientsvc.controller;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -20,7 +18,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -45,9 +42,17 @@ import com.thoughtbend.enterprise.clientsvc.repository.ClientRepository;
 @WebMvcTest(controllers = ClientController.class)
 public class ClientControllerTest {
 
+	static class Field {
+		final static String NAME = "name";
+		final static String CONTACT_PHONE = "contactNumber";
+		final static String CLIENT_EXEC_ID = "clientExecutiveId";
+	}
+	
 	static class TestData {
 		final static String DOC_ID = UUID.randomUUID().toString();
 		final static String NAME = "Test Client Name";
+		final static String PHONE_VALID = "3125551212";
+		final static String PHONE_INVALID_1 = "125551212";
 		final static String CLIENT_EXEC_ID = UUID.randomUUID().toString();
 	}
 
@@ -127,10 +132,10 @@ public class ClientControllerTest {
 
 	@Test
 	public void test_getClients_noResult() throws Exception {
+		
 		// We simply want to verify that we return an empty result instead of an error
 		// under this scenario,
 		// it may be valid to have zero clients returned when none exist
-
 		final List<ClientDocument> docListFixture = new ArrayList<>();
 
 		when(this.mockClientRepo.findAll()).thenReturn(docListFixture);
@@ -148,8 +153,9 @@ public class ClientControllerTest {
 	public void test_createClient_success() throws Exception {
 
 		JSONObject clientFixture = new JSONObject();
-		clientFixture.put("name", TestData.NAME);
-		clientFixture.put("clientExecutiveId", TestData.CLIENT_EXEC_ID);
+		clientFixture.put(Field.NAME, TestData.NAME);
+		clientFixture.put(Field.CLIENT_EXEC_ID, TestData.CLIENT_EXEC_ID);
+		clientFixture.put(Field.CONTACT_PHONE, TestData.PHONE_VALID);
 
 		final ResultActions result = mvc.perform(
 				post(CLIENT_ROOT_PATH).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
@@ -176,11 +182,34 @@ public class ClientControllerTest {
 			.andExpect(jsonPath("$.clientExecutiveId", is(TestData.CLIENT_EXEC_ID)));
 		// @formatter:on
 	}
-
+	
 	@Test
-	public void test_createClient_errorClientNameMissing() throws Exception {
+	public void test_createClient_contactNumberValidadtionError() throws Exception {
+
+		// 1. Setup
+		JSONObject clientFixture = new JSONObject();
+		clientFixture.put("name", TestData.NAME);
+		clientFixture.put("clientExecutiveId", TestData.CLIENT_EXEC_ID);
+		clientFixture.put("contactNumber", TestData.PHONE_INVALID_1);
+
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				post(CLIENT_ROOT_PATH).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
+
+		// 3. Validate
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+
+		// @formatter:off
+		result.andExpect(status().isBadRequest());
+		// @formatter:on
+	}
+	
+	@Test
+	public void test_createClient_errorContactNumberMissing() throws Exception {
 
 		JSONObject clientFixture = new JSONObject();
+		clientFixture.put("name", TestData.NAME);
 		clientFixture.put("clientExecutiveId", TestData.CLIENT_EXEC_ID);
 
 		final ResultActions result = mvc.perform(
@@ -189,7 +218,23 @@ public class ClientControllerTest {
 
 		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
 		
-		result.andExpect(status().isBadRequest()).andExpect(header().string("Location", is(nullValue())));
+		result.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	public void test_createClient_errorClientNameMissing() throws Exception {
+
+		JSONObject clientFixture = new JSONObject();
+		clientFixture.put("clientExecutiveId", TestData.CLIENT_EXEC_ID);
+		clientFixture.put("contactNumber", TestData.PHONE_VALID);
+
+		final ResultActions result = mvc.perform(
+				post(CLIENT_ROOT_PATH).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
+
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
+		result.andExpect(status().isBadRequest());
 	}
 
 	@Test
@@ -203,7 +248,7 @@ public class ClientControllerTest {
 
 		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
 		
-		result.andExpect(status().isBadRequest()).andExpect(header().string("Location", is(nullValue())));
+		result.andExpect(status().isBadRequest());
 	}
 	
 	@Test
