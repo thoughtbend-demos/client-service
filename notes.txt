@@ -1,0 +1,7 @@
+client-service
+
+
+docker build -t mnolan98/client-service .
+docker tag mnolan98/client-service:latest mnolan98/client-service:0.0.2
+docker tag mnolan98/client-service:latest mnolan98/client-service:nonprod
+docker push mnolan98/client-service:latest

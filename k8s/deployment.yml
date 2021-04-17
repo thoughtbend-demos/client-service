@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-service-nonprod-deployment
+  labels: 
+    app: client-service-nonprod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-service-nonprod
+  template:
+    metadata:
+      labels:
+        app: client-service-nonprod
+    spec:
+      containers:
+      - name: client-service-nonprod-pod
+        image: mnolan98/client-service:0.0.2
+        
+        resources:
+          requests:
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+        
+        ports:
+        - containerPort: 8080
+        
+        
+        livenessProbe: 
+          httpGet:
+            port: 8080
+            path: /actuator/health
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+          initialDelaySeconds: 5
+
+        env:
+        - name: "spring.data.mongodb.uri"
+          valueFrom:
+            secretKeyRef:
+              name: "client-db-mongodb-uri"
+              key: "uri"
+        - name: "spring.data.mongodb.authentication-database"
+          value: "admin"
+        - name: "logging.level.org.mongodb"
+          value: "info"

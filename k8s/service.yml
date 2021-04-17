@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-service-nonprod-svc
+  labels:
+# This matches the app in the rc, not the rc
+    app: client-service-nonprod
+spec:
+  type: NodePort
+# types are 
+# ClusterIP for a stable internal cluster ip
+# NodePort for exposing the the port outside the cluster, on top of stable internal ip
+# LoadBalancer integrates NodePort with cloud-based load balancer
+  ports:
+  - port: 8080
+    nodePort: 30002
+    protocol: TCP
+  selector:
+    app: client-service-nonprod
