@@ -6,6 +6,167 @@
 	},
 	"item": [
 		{
+			"name": "Create Client",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Gather data\", () => {",
+							"    pm.response.to.have.status(201);",
+							"    let jsonData = pm.response.json();",
+							"    console.log(jsonData.id);",
+							"    pm.collectionVariables.set(\"clientId\", jsonData.id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test Client Name 2\",\n    \"contactNumber\": \"3125551213\",\n    \"clientExecutiveId\": \"12322\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{clientServiceHost}}/v1/client",
+					"host": [
+						"{{clientServiceHost}}"
+					],
+					"path": [
+						"v1",
+						"client"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Client By ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status Test\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test Client Name\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{clientServiceHost}}/v1/client/{{clientId}}",
+					"host": [
+						"{{clientServiceHost}}"
+					],
+					"path": [
+						"v1",
+						"client",
+						"{{clientId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Client By ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status Test\", () => {",
+							"    pm.response.to.have.status(204);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": \"{{clientId}}\",\n    \"name\": \"Test Client Name 2\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{clientServiceHost}}/v1/client/{{clientId}}",
+					"host": [
+						"{{clientServiceHost}}"
+					],
+					"path": [
+						"v1",
+						"client",
+						"{{clientId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Get All Clients",
 			"event": [
 				{
@@ -56,169 +217,13 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/v1/client",
-					"protocol": "http",
+					"raw": "{{clientServiceHost}}/v1/client",
 					"host": [
-						"localhost"
+						"{{clientServiceHost}}"
 					],
-					"port": "8080",
 					"path": [
 						"v1",
 						"client"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Client",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Gather data\", () => {",
-							"    pm.response.to.have.status(201);",
-							"    let jsonData = pm.response.json();",
-							"    console.log(jsonData.id);",
-							"    pm.collectionVariables.set(\"clientId\", jsonData.id);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"name\": \"Test Client Name 2\",\n    \"contactNumber\": \"3125551213\",\n    \"clientExecutiveId\": \"12322\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/v1/client",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"v1",
-						"client"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Update Client By ID",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status Test\", () => {",
-							"    pm.response.to.have.status(204);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"id\": \"{{clientId}}\",\n    \"name\": \"Test Client Name 2\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/v1/client/{{clientId}}",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"v1",
-						"client",
-						"{{clientId}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Client By ID",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"name\": \"Test Client Name\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/v1/client/{{clientId}}",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"v1",
-						"client",
-						"{{clientId}}"
 					]
 				}
 			},
@@ -263,16 +268,120 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/v1/client/{{clientId}}",
-					"protocol": "http",
+					"raw": "{{clientServiceHost}}/v1/client/{{clientId}}",
 					"host": [
-						"localhost"
+						"{{clientServiceHost}}"
 					],
-					"port": "8080",
 					"path": [
 						"v1",
 						"client",
 						"{{clientId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Client By Missing ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status Test\", () => {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test Client Name\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{clientServiceHost}}/v1/client/{{clientId}}",
+					"host": [
+						"{{clientServiceHost}}"
+					],
+					"path": [
+						"v1",
+						"client",
+						"{{clientId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Client With Body Missing",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Gather data\", () => {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{clientServiceHost}}/v1/client",
+					"host": [
+						"{{clientServiceHost}}"
+					],
+					"path": [
+						"v1",
+						"client"
 					]
 				}
 			},
@@ -311,7 +420,6 @@
 	],
 	"variable": [
 		{
-			"id": "56bd2965-61d0-4523-a548-a4c58a3ecfd4",
 			"key": "clientId",
 			"value": ""
 		}
