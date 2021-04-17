@@ -1,0 +1,319 @@
+{
+	"info": {
+		"_postman_id": "aefca96a-1889-40c2-9e88-1c077e183e72",
+		"name": "TB Client Service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get All Clients",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status Test\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test Client Name\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/client",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"client"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Client",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Gather data\", () => {",
+							"    pm.response.to.have.status(201);",
+							"    let jsonData = pm.response.json();",
+							"    console.log(jsonData.id);",
+							"    pm.collectionVariables.set(\"clientId\", jsonData.id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test Client Name 2\",\n    \"contactNumber\": \"3125551213\",\n    \"clientExecutiveId\": \"12322\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/client",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"client"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Client By ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status Test\", () => {",
+							"    pm.response.to.have.status(204);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": \"{{clientId}}\",\n    \"name\": \"Test Client Name 2\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/client/{{clientId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"client",
+						"{{clientId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Client By ID",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test Client Name\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/client/{{clientId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"client",
+						"{{clientId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Client By Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status Test\", () => {",
+							"    pm.response.to.have.status(204);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test Client Name\",\n    \"contactNumber\": \"3125551212\",\n    \"clientExecutiveId\": \"12321\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/client/{{clientId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"client",
+						"{{clientId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlVWckw5SEVadXU3MHc1dUx6RDBKUiJ9.eyJpc3MiOiJodHRwczovL3Rob3VnaHRiZW5kLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJEOEowa1JmN1JtTHpHQ2RMbFc3Q1Fwa1dWSEg2ZzN4VEBjbGllbnRzIiwiYXVkIjoiaHR0cHM6Ly9jbGllbnQtc2VydmljZS50aG91Z2h0YmVuZC5jb20vIiwiaWF0IjoxNjE4NjIyMDcwLCJleHAiOjE2MTg3MDg0NzAsImF6cCI6IkQ4SjBrUmY3Um1MekdDZExsVzdDUXBrV1ZISDZnM3hUIiwic2NvcGUiOiJjcmVhdGU6Y2xpZW50IHJlYWQ6Y2xpZW50IHVwZGF0ZTpjbGllbnQgZGVsZXRlOmNsaWVudCIsImd0eSI6ImNsaWVudC1jcmVkZW50aWFscyJ9.VI-pF70sAql7NMgF0iX-YOvcBuJGV4B3idTgVYIhUULPX1TFJsIe7kGnYkYA6Jl-LTsDsBzBGvDz1nG1OyGGZj8hxsB0RUoNCFmldtq6IJbd5e-k7LW7gA0BAtrR03Ua5X8Wf02kHp9_HEoCH7KvwMl-zDlb0jDWNr9d-qV69K3mSV85bQa1AOVhadLZR6WUgVLwQsoWW5l-mgr3x0DfEnqa-tEsVPYHMBVFpInC9BJrJ5WuqoRokKWFrSzh7N6dOXb9PthmjCmMT7IN36Detb5qwRrHnFi9WgxUkJABKTzC9kwchithAW8vsYwkBoSPciZd9IGgM6LSLOvn1J9Nyg",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "56bd2965-61d0-4523-a548-a4c58a3ecfd4",
+			"key": "clientId",
+			"value": ""
+		}
+	]
+}
