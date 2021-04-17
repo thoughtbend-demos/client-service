@@ -30,6 +30,7 @@ import com.thoughtbend.enterprise.clientsvc.entity.ClientDocument;
 import com.thoughtbend.enterprise.clientsvc.event.ClientEventPublisher;
 import com.thoughtbend.enterprise.clientsvc.event.OutboundClientDataEvent;
 import com.thoughtbend.enterprise.clientsvc.event.OutboundClientDataEventType;
+import com.thoughtbend.enterprise.clientsvc.event.OutboundDeleteClientEvent;
 import com.thoughtbend.enterprise.clientsvc.repository.ClientRepository;
 import com.thoughtbend.enterprise.clientsvc.resource.ClientResource;
 import com.thoughtbend.enterprise.clientsvc.util.Const;
@@ -87,6 +88,10 @@ public class ClientController {
 		
 		final OutboundClientDataEvent event = OutboundClientDataEventType.NEW.createEvent(clientResource);
 		this.clientEventPublisher.publish(event);
+		
+		if (LOG.isInfoEnabled()) {
+			LOG.info(String.format("Finished creating client [%1$s]", id));
+		}
 
 		return ResponseEntity.created(new URI(Const.ApiPath.VERSION + "/client/" + id)).body(clientResource);
 	}
@@ -97,13 +102,17 @@ public class ClientController {
 	public ClientResource getClientById(@PathVariable(name = "clientId") final String clientId) {
 
 		if (LOG.isTraceEnabled()) {
-			LOG.trace(String.format("ClientResource::getClient() called [%1$s]", clientId));
+			LOG.trace(String.format("ClientResource::getClientById() called [%1$s]", clientId));
 		}
 		
 		final Optional<ClientDocument> optionalClientDocument = this.clientRepository.findByDocId(clientId);
 
 		final ClientDocument clientDocument = optionalClientDocument.orElseThrow(NotFoundException::new);
 		final ClientResource result = this.transform(clientDocument);
+		
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("ClientResource::getClientById() fetched successfully [%1$s]", clientId));
+		}
 
 		return result;
 	}
@@ -128,6 +137,12 @@ public class ClientController {
 		
 		final ClientDocument mergedClientDocument = this.merge(clientDocument, clientResource);
 		this.clientRepository.save(mergedClientDocument);
+		this.clientEventPublisher.publish(OutboundClientDataEventType.UPDATE.createEvent(clientResource));
+		
+		if (LOG.isInfoEnabled()) {
+			LOG.info(String.format("Finished updating client [%1$s]", clientId));
+		}
+		
 	}
 	
 	@DeleteMapping(path = "/{clientId}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -139,42 +154,73 @@ public class ClientController {
 			LOG.trace(String.format("ClientResource::deleteClientbyId() called [%1$s]", clientId));
 		}
 		
-		if (!this.clientRepository.existsByDocId(clientId)) {
-			throw new NotFoundException();
-		}
+		final ClientDocument originalClientDocument =
+				this.clientRepository.findByDocId(clientId).orElseThrow(NotFoundException::new);
 		
 		this.clientRepository.deleteByDocId(clientId);
+		final ClientResource clientResource = this.transform(originalClientDocument);
+		final OutboundDeleteClientEvent deleteClientEvent = 
+				new OutboundDeleteClientEvent(clientId, clientResource);
+		this.clientEventPublisher.publish(deleteClientEvent);
+		
+		if (LOG.isInfoEnabled()) {
+			LOG.info(String.format("Finished deleting client [%1$s]", clientId));
+		}
 	}
 
 	private ClientResource transform(ClientDocument source) {
 
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("transform ClientDocument as source [%1$s]", source));
+		}
+		
 		final ClientResource target = new ClientResource();
 
 		target.setId(source.getDocId());
 		target.setName(source.getName());
 		target.setContactNumber(source.getContactNumber());
 		target.setClientExecutiveId(source.getClientExecutiveId());
+		
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("transform ClientResource as target [%1$s]", target));
+		}
 
 		return target;
 	}
 
 	private ClientDocument transform(ClientResource source) {
 
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("transform ClientResource as source [%1$s]", source));
+		}
+		
 		final ClientDocument target = new ClientDocument();
 
 		target.setDocId(source.getId());
 		target.setName(source.getName());
 		target.setContactNumber(source.getContactNumber());
 		target.setClientExecutiveId(source.getClientExecutiveId());
+		
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("transform ClientDocument as target [%1$s]", target));
+		}
 
 		return target;
 	}
 	
 	private ClientDocument merge(ClientDocument target, ClientResource source) {
 		
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("merge ClientResource as source [%1$s]", source));
+		}
+		
 		target.setName(source.getName());
 		target.setClientExecutiveId(source.getClientExecutiveId());
 		target.setContactNumber(source.getContactNumber());
+		
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("merge ClientDocument as target [%1$s]", target));
+		}
 		
 		return target;
 	}

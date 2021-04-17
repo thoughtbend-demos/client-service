@@ -12,4 +12,9 @@ public class DefaultClientEventPublisher implements ClientEventPublisher {
 		LOG.info(String.format("Publishing NewClientEvent [%1$s]", event.toString()));
 	}
 
+	@Override
+	public void publish(OutboundDeleteClientEvent event) {
+		LOG.info(String.format("Publishing DeleteClientEvent [%1$s]", event.toString()));
+	}
+
 }

@@ -2,6 +2,11 @@ package com.thoughtbend.enterprise.clientsvc.resource;
 
 import javax.validation.constraints.NotBlank;
 
+import org.springframework.core.style.DefaultToStringStyler;
+import org.springframework.core.style.DefaultValueStyler;
+import org.springframework.core.style.ToStringCreator;
+import org.springframework.core.style.ToStringStyler;
+
 import com.thoughtbend.enterprise.clientsvc.validation.annotation.ContactNumberConstraint;
 
 public class ClientResource {
@@ -47,6 +52,19 @@ public class ClientResource {
 
 	public void setContactNumber(String contactNumber) {
 		this.contactNumber = contactNumber;
+	}
+
+	@Override
+	public String toString() {
+		
+		final ToStringCreator tsc = new ToStringCreator(this, new DefaultToStringStyler(new DefaultValueStyler()));
+		
+		tsc.append("id", this.getId());
+		tsc.append("name", this.getName());
+		tsc.append("contactNumber", this.getContactNumber());
+		tsc.append("clientExecutiveId", this.getClientExecutiveId());
+		
+		return tsc.toString();
 	}
 
 }
