@@ -8,8 +8,13 @@ public class DefaultClientEventPublisher implements ClientEventPublisher {
 	private static final Logger LOG = LoggerFactory.getLogger(DefaultClientEventPublisher.class);
 	
 	@Override
-	public void publish(OutboundNewClientEvent event) {
+	public void publish(OutboundClientDataEvent event) {
 		LOG.info(String.format("Publishing NewClientEvent [%1$s]", event.toString()));
+	}
+
+	@Override
+	public void publish(OutboundDeleteClientEvent event) {
+		LOG.info(String.format("Publishing DeleteClientEvent [%1$s]", event.toString()));
 	}
 
 }

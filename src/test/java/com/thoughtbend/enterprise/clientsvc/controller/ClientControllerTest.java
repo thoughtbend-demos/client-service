@@ -1,6 +1,7 @@
 package com.thoughtbend.enterprise.clientsvc.controller;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,13 +40,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtbend.enterprise.clientsvc.entity.ClientDocument;
 import com.thoughtbend.enterprise.clientsvc.event.ClientEventPublisher;
-import com.thoughtbend.enterprise.clientsvc.event.OutboundNewClientEvent;
+import com.thoughtbend.enterprise.clientsvc.event.OutboundClientDataEvent;
+import com.thoughtbend.enterprise.clientsvc.event.OutboundDeleteClientEvent;
 import com.thoughtbend.enterprise.clientsvc.repository.ClientRepository;
 
 @WebMvcTest(controllers = ClientController.class)
 public class ClientControllerTest {
 
 	static class Field {
+		final static String ID = "id";
 		final static String NAME = "name";
 		final static String CONTACT_PHONE = "contactNumber";
 		final static String CLIENT_EXEC_ID = "clientExecutiveId";
@@ -164,18 +168,34 @@ public class ClientControllerTest {
 				post(CLIENT_ROOT_PATH).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
 
+		/* Validate the transformation of resource to data document */
 		final ArgumentCaptor<ClientDocument> clientCaptor = ArgumentCaptor.forClass(ClientDocument.class);
 		verify(this.mockClientRepo).save(clientCaptor.capture());
 
 		final ClientDocument capturedClient = clientCaptor.getValue();
 		assertNotNull(capturedClient, "capturedClient should not be null");
 		assertNotNull(capturedClient.getDocId(), "capturedClient docId should not be null");
+		assertEquals(TestData.NAME, capturedClient.getName());
+		assertEquals(TestData.PHONE_VALID, capturedClient.getContactNumber());
+		assertEquals(TestData.CLIENT_EXEC_ID, capturedClient.getClientExecutiveId());
 		
-		final ArgumentCaptor<OutboundNewClientEvent> eventCaptor = ArgumentCaptor.forClass(OutboundNewClientEvent.class);
+		// We need the doc id when testing the event
+		final String docId = capturedClient.getDocId();
+		
+		/* Validating the event data is published correctly */
+		final ArgumentCaptor<OutboundClientDataEvent> eventCaptor = ArgumentCaptor.forClass(OutboundClientDataEvent.class);
 		verify(this.mockClientEventPublisher).publish(eventCaptor.capture());
 		
-		final OutboundNewClientEvent capturedEvent = eventCaptor.getValue();
+		final OutboundClientDataEvent capturedEvent = eventCaptor.getValue();
 		assertNotNull(capturedEvent, "capturedEvent should not be null");
+		assertEquals("NEW_CLIENT", capturedEvent.getEventName());
+		assertNotNull(capturedEvent.getClientData(), "capturedEvent clientData should not be null");
+		assertEquals(docId, capturedEvent.getClientData().getId());
+		assertEquals(TestData.NAME, capturedEvent.getClientData().getName());
+		assertEquals(TestData.PHONE_VALID, capturedEvent.getClientData().getContactNumber());
+		assertEquals(TestData.CLIENT_EXEC_ID, capturedEvent.getClientData().getClientExecutiveId());
+		
+		verifyNoMoreInteractions(this.mockClientRepo, this.mockClientEventPublisher);
 
 		// @formatter:off
 		result.andExpect(status().isCreated())
@@ -295,15 +315,37 @@ public class ClientControllerTest {
 	public void test_deleteClientById_success() throws Exception {
 		
 		// 1. Setup
-		when(this.mockClientRepo.existsByDocId(TestData.DOC_ID)).thenReturn(true);
+		final ClientDocument dataFixture = new ClientDocument();
+		dataFixture.setDbId(TestData.ID);
+		dataFixture.setDocId(TestData.DOC_ID);
+		dataFixture.setName(TestData.NAME);
+		dataFixture.setContactNumber(TestData.PHONE_VALID);
+		dataFixture.setClientExecutiveId(TestData.CLIENT_EXEC_ID);
+		
+		when(this.mockClientRepo.findByDocId(TestData.DOC_ID)).thenReturn(Optional.of(dataFixture));
 		
 		// 2. Execute
 		final ResultActions result = mvc.perform(
 				delete(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN));
 		
 		// 3. Validate
-		verify(this.mockClientRepo).existsByDocId(TestData.DOC_ID);
+		verify(this.mockClientRepo).findByDocId(TestData.DOC_ID);
 		verify(this.mockClientRepo).deleteByDocId(TestData.DOC_ID);
+		
+		final ArgumentCaptor<OutboundDeleteClientEvent> eventCaptor = ArgumentCaptor.forClass(OutboundDeleteClientEvent.class);
+		verify(this.mockClientEventPublisher).publish(eventCaptor.capture());
+		
+		final OutboundDeleteClientEvent capturedEvent = eventCaptor.getValue();
+		assertNotNull(capturedEvent, "capturedEvent should not be null");
+		assertEquals("DELETE_CLIENT", capturedEvent.getEventName());
+		assertEquals(TestData.DOC_ID, capturedEvent.getClientId());
+		// Now testing the last state to ensure it contains all data
+		assertEquals(TestData.DOC_ID, capturedEvent.getLastClientState().getId());
+		assertEquals(TestData.NAME, capturedEvent.getLastClientState().getName());
+		assertEquals(TestData.PHONE_VALID, capturedEvent.getLastClientState().getContactNumber());
+		assertEquals(TestData.CLIENT_EXEC_ID, capturedEvent.getLastClientState().getClientExecutiveId());
+		
+		verifyNoMoreInteractions(this.mockClientRepo, this.mockClientEventPublisher);
 		
 		result.andExpect(status().isNoContent());
 	}
@@ -312,16 +354,167 @@ public class ClientControllerTest {
 	public void test_deleteClientById_errorDocIdNotFound() throws Exception {
 		
 		// 1. Setup
-		when(this.mockClientRepo.existsByDocId(TestData.DOC_ID)).thenReturn(false);
+		when(this.mockClientRepo.findByDocId(TestData.DOC_ID)).thenReturn(Optional.empty());
 		
 		// 2. Execute
 		final ResultActions result = mvc.perform(
 				delete(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN));
 		
 		// 3. Validate
-		verify(this.mockClientRepo).existsByDocId(TestData.DOC_ID);
+		verify(this.mockClientRepo).findByDocId(TestData.DOC_ID);
 		verifyNoMoreInteractions(this.mockClientRepo);
+		verifyNoInteractions(this.mockClientEventPublisher);
 		
 		result.andExpect(status().isNotFound());
+	}
+	
+	@Test
+	public void test_updateClientById_success() throws Exception {
+	
+		// 1. Setup
+		final JSONObject clientFixture = new JSONObject();
+		clientFixture.put(Field.ID, TestData.DOC_ID);
+		clientFixture.put(Field.NAME, TestData.NAME);
+		clientFixture.put(Field.CLIENT_EXEC_ID, TestData.CLIENT_EXEC_ID);
+		clientFixture.put(Field.CONTACT_PHONE, TestData.PHONE_VALID);
+		
+		final ClientDocument dataFixture = new ClientDocument();
+		
+		when(this.mockClientRepo.findByDocId(TestData.DOC_ID)).thenReturn(Optional.of(dataFixture));
+		
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				put(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
+		
+		// 3. Validate
+		verify(this.mockClientRepo).findByDocId(TestData.DOC_ID);
+		
+		/* Validating the merge operation by capturing what is passed to the save operation */
+		final ArgumentCaptor<ClientDocument> dataCaptor = ArgumentCaptor.forClass(ClientDocument.class);
+		verify(this.mockClientRepo).save(dataCaptor.capture());
+		
+		final ClientDocument capturedClient = dataCaptor.getValue();
+		assertNotNull(capturedClient, "capturedClient should not be null");
+		assertEquals(TestData.NAME, capturedClient.getName());
+		assertEquals(TestData.CLIENT_EXEC_ID, capturedClient.getClientExecutiveId());
+		assertEquals(TestData.PHONE_VALID, capturedClient.getContactNumber());
+		
+		/* Validating the event data is published correctly */
+		final ArgumentCaptor<OutboundClientDataEvent> eventCaptor = ArgumentCaptor.forClass(OutboundClientDataEvent.class);
+		verify(this.mockClientEventPublisher).publish(eventCaptor.capture());
+		
+		final OutboundClientDataEvent capturedEvent = eventCaptor.getValue();
+		assertNotNull(capturedEvent, "capturedEvent should not be null");
+		assertEquals("UPDATE_CLIENT", capturedEvent.getEventName());
+		assertNotNull(capturedEvent.getClientData(), "capturedEvent clientData should not be null");
+		assertEquals(TestData.DOC_ID, capturedEvent.getClientData().getId());
+		assertEquals(TestData.NAME, capturedEvent.getClientData().getName());
+		assertEquals(TestData.PHONE_VALID, capturedEvent.getClientData().getContactNumber());
+		assertEquals(TestData.CLIENT_EXEC_ID, capturedEvent.getClientData().getClientExecutiveId());
+		
+		verifyNoMoreInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
+		result.andExpect(status().isNoContent());
+	}
+	
+	@Test
+	public void test_updateClientById_errorDocIdInBodyDoesNotMatchValueInPath() throws Exception {
+	
+		// 1. Setup
+		final JSONObject clientFixture = new JSONObject();
+		clientFixture.put(Field.ID, TestData.DOC_ID + "1");
+		clientFixture.put(Field.NAME, TestData.NAME);
+		clientFixture.put(Field.CLIENT_EXEC_ID, TestData.CLIENT_EXEC_ID);
+		clientFixture.put(Field.CONTACT_PHONE, TestData.PHONE_VALID);
+		
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				put(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
+		
+		// 3. Validate
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
+		result.andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	public void test_updateClientById_errorBodyMissing() throws Exception {
+	
+		// 1. Setup
+
+		
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				put(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON));
+		
+		// 3. Validate
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
+		result.andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	public void test_updateClientById_errorDocMissingName() throws Exception {
+	
+		// 1. Setup
+		final JSONObject clientFixture = new JSONObject();
+		clientFixture.put(Field.ID, TestData.DOC_ID);
+		clientFixture.put(Field.CLIENT_EXEC_ID, TestData.CLIENT_EXEC_ID);
+		clientFixture.put(Field.CONTACT_PHONE, TestData.PHONE_VALID);
+		
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				put(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
+		
+		// 3. Validate
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
+		result.andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	public void test_updateClientById_errorDocMissingContactNumber() throws Exception {
+	
+		// 1. Setup
+		final JSONObject clientFixture = new JSONObject();
+		clientFixture.put(Field.ID, TestData.DOC_ID);
+		clientFixture.put(Field.NAME, TestData.NAME);
+		clientFixture.put(Field.CLIENT_EXEC_ID, TestData.CLIENT_EXEC_ID);
+		//clientFixture.put(Field.CONTACT_PHONE, TestData.PHONE_VALID);
+		
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				put(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
+		
+		// 3. Validate
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
+		result.andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	public void test_updateClientById_errorDocHasInvalidContactNumber() throws Exception {
+	
+		// 1. Setup
+		final JSONObject clientFixture = new JSONObject();
+		clientFixture.put(Field.ID, TestData.DOC_ID);
+		clientFixture.put(Field.NAME, TestData.NAME);
+		clientFixture.put(Field.CLIENT_EXEC_ID, TestData.CLIENT_EXEC_ID);
+		clientFixture.put(Field.CONTACT_PHONE, TestData.PHONE_INVALID_1);
+		
+		// 2. Execute
+		final ResultActions result = mvc.perform(
+				put(CLIENT_ROOT_PATH + "/" + TestData.DOC_ID).header("Authorization", "Bearer " + TOKEN).accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON).content(clientFixture.toString()));
+		
+		// 3. Validate
+		verifyNoInteractions(this.mockClientRepo, this.mockClientEventPublisher);
+		
+		result.andExpect(status().isBadRequest());
 	}
 }
