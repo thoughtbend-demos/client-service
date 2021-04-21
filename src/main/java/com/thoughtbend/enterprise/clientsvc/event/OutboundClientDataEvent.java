@@ -1,9 +1,13 @@
 package com.thoughtbend.enterprise.clientsvc.event;
 
+import java.io.Serializable;
+
 import com.thoughtbend.enterprise.clientsvc.resource.ClientResource;
 
-public class OutboundClientDataEvent {
+public class OutboundClientDataEvent implements Serializable {
 
+	private static final long serialVersionUID = 8112274109539563570L;
+	
 	private final String eventName;
 	private final ClientResource clientData;
 	

@@ -5,3 +5,7 @@ docker build -t mnolan98/client-service .
 docker tag mnolan98/client-service:latest mnolan98/client-service:0.0.2
 docker tag mnolan98/client-service:latest mnolan98/client-service:nonprod
 docker push mnolan98/client-service:latest
+
+
+# Starting redis in docker (basic)
+docker run --name tb-redis -p 6379:6379 -d redis:6.2.2
