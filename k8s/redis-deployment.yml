@@ -1,0 +1,23 @@
+# Basic Redis Deployment for standalone instance until I can find a legitimate operator and learn it
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tb-redis-nonprod-deployment
+  labels: 
+    app: tb-redis-nonprod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tb-redis-nonprod
+  template:
+    metadata:
+      labels:
+        app: tb-redis-nonprod
+    spec:
+      containers:
+      - name: tb-redis-nonprod-pod
+        image: redis:6.2.2
+        
+        ports:
+        - containerPort: 6379

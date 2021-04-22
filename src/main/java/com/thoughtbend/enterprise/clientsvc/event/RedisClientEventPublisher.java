@@ -25,7 +25,8 @@ public class RedisClientEventPublisher implements ClientEventPublisher {
 	@Autowired
 	private ChannelTopic clientErrorTopic;
 	
-	private ObjectMapper mapper = new ObjectMapper();
+	@Autowired
+	private ObjectMapper mapper;
 	
 	@Override
 	public void publish(OutboundClientDataEvent event) {

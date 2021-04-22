@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.thoughtbend.enterprise.clientsvc.event.ClientEventPublisher;
-import com.thoughtbend.enterprise.clientsvc.event.DefaultClientEventPublisher;
 import com.thoughtbend.enterprise.clientsvc.event.RedisClientEventPublisher;
 
 @Configuration
