@@ -1,15 +1,18 @@
 package com.thoughtbend.enterprise.clientsvc.resource;
 
+import java.io.Serializable;
+
 import javax.validation.constraints.NotBlank;
 
 import org.springframework.core.style.DefaultToStringStyler;
 import org.springframework.core.style.DefaultValueStyler;
 import org.springframework.core.style.ToStringCreator;
-import org.springframework.core.style.ToStringStyler;
 
 import com.thoughtbend.enterprise.clientsvc.validation.annotation.ContactNumberConstraint;
 
-public class ClientResource {
+public class ClientResource implements Serializable {
+
+	private static final long serialVersionUID = 2350044960333831704L;
 
 	private String id;
 	

@@ -1,9 +1,13 @@
 package com.thoughtbend.enterprise.clientsvc.event;
 
+import java.io.Serializable;
+
 import com.thoughtbend.enterprise.clientsvc.resource.ClientResource;
 
-public class OutboundDeleteClientEvent {
+public class OutboundDeleteClientEvent implements Serializable {
 
+	private static final long serialVersionUID = -6635951207555599516L;
+	
 	private final String eventName = "DELETE_CLIENT";
 	private final String clientId;
 	private final ClientResource lastClientState;
