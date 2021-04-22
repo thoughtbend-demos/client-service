@@ -6,10 +6,15 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
 
 @Configuration
 public class RedisConfig {
 
+	private static final String CLIENT_DATA_EVENT_TOPIC = "clientDataEventTopic";
+	private static final String CLIENT_DELETE_EVENT_TOPIC = "clientDeleteEventTopic";
+	private static final String CLIENT_ERROR_TOPIC = "clientErrorTopic";
+	
 	@Bean
 	JedisConnectionFactory jedisConnectionFactory() {
 		
@@ -25,5 +30,20 @@ public class RedisConfig {
 		RedisTemplate<String, Object> template = new RedisTemplate<>();
 		template.setConnectionFactory(jedisConnectionFactory());
 		return template;
+	}
+	
+	@Bean
+	public ChannelTopic clientDataEventTopic() {
+		return new ChannelTopic(CLIENT_DATA_EVENT_TOPIC);
+	}
+	
+	@Bean
+	public ChannelTopic clientDeleteEventTopic() {
+		return new ChannelTopic(CLIENT_DELETE_EVENT_TOPIC);
+	}
+	
+	@Bean
+	public ChannelTopic clientErrorTopic() {
+		return new ChannelTopic(CLIENT_ERROR_TOPIC);
 	}
 }
