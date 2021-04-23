@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: client-service-nonprod-pod
-        image: mnolan98/client-service:0.0.2
+        image: mnolan98/client-service:0.0.3
         
         resources:
           requests:
@@ -48,3 +48,6 @@ spec:
           value: "admin"
         - name: "logging.level.org.mongodb"
           value: "info"
+        - name: "client.redis.host"
+#          value: "tb-redis-svc.default.svc.cluster.local"
+          value: "tb-redis-svc"
