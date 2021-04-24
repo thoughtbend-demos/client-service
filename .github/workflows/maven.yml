@@ -24,7 +24,7 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml --settings settings.xml
       env:
-        USENAME: ${{ github.actor }}
+        USERNAME: ${{ github.actor }}
         PASSWORD: ${{ secrets.GITHUB_TOKEN }}
     - name: Test with Maven
       run: mvn test --file pom.xml
