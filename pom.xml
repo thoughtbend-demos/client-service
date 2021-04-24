@@ -56,9 +56,9 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>com.thoughtbend.common</groupId>
-			<artifactId>thoughtbend-spring-web</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+  			<groupId>com.thoughtbend.common</groupId>
+  			<artifactId>thoughtbend-spring-web</artifactId>
+  			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		
 	</dependencies>
