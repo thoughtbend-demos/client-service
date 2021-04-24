@@ -26,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.thoughtbend.common.web.exceptions.BadRequestException;
+import com.thoughtbend.common.web.exceptions.NotFoundException;
 import com.thoughtbend.enterprise.clientsvc.entity.ClientDocument;
 import com.thoughtbend.enterprise.clientsvc.event.ClientEventPublisher;
 import com.thoughtbend.enterprise.clientsvc.event.OutboundClientDataEvent;

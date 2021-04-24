@@ -54,7 +54,33 @@
 			<artifactId>jedis</artifactId>
 			<type>jar</type>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.thoughtbend.common</groupId>
+			<artifactId>thoughtbend-spring-web</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		
 	</dependencies>
+	
+	<profiles>
+		<profile>
+			<id>github</id>
+			<repositories>
+				<repository>
+					<id>central</id>
+					<url>https://repo1.maven.org/maven2</url>
+				</repository>
+				<repository>
+					<id>github</id>
+					<url>https://maven.pkg.github.com/thoughtbend-demos/*</url>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
+		</profile>
+	</profiles>
 
 	<build>
 		<plugins>
